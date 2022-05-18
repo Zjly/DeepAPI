@@ -20,7 +20,7 @@ from tensorboardX import SummaryWriter # install tensorboardX (pip install tenso
 
 
 def train(args):
-    timestamp=datetime.now().strftime('%Y%m%d%H%M')    
+    timestamp=datetime.now().strftime('%Y%m%d%H%M')
     # LOG #
     logger = logging.getLogger(__name__)
     logging.basicConfig(level=logging.DEBUG, format="%(message)s")#,format="%(asctime)s: %(name)s: %(levelname)s: %(message)s")
@@ -37,7 +37,7 @@ def train(args):
         json.dump(vars(args), open(f'./output/{args.model}/{args.expname}/{timestamp}/args.json', 'w'))
 
     # Device #
-    if args.gpu_id<0: 
+    if args.gpu_id<0:
         device = torch.device("cuda")
     else:
         device = torch.device(f"cuda:{args.gpu_id}" if torch.cuda.is_available() and args.gpu_id>-1 else "cpu")
@@ -80,12 +80,12 @@ def train(args):
     ###############################################################################
     # Define the models
     ###############################################################################
-    model = getattr(models, args.model)(config) 
+    model = getattr(models, args.model)(config)
     if args.reload_from>=0:
         load_model(model, args.reload_from)
     model=model.to(device)
-    
-    
+
+
     ###############################################################################
     # Prepare the Optimizer
     ###############################################################################
@@ -93,10 +93,10 @@ def train(args):
     optimizer_grouped_parameters = [
             {'params': [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)], 'weight_decay': 0.01},
             {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
-    ]    
-    optimizer = torch.optim.AdamW(optimizer_grouped_parameters, lr=config['lr'], eps=config['adam_epsilon'])        
+    ]
+    optimizer = torch.optim.AdamW(optimizer_grouped_parameters, lr=config['lr'], eps=config['adam_epsilon'])
     scheduler = get_cosine_schedule_with_warmup(
-            optimizer, num_warmup_steps=config['warmup_steps'], 
+            optimizer, num_warmup_steps=config['warmup_steps'],
             num_training_steps=len(train_loader)*config['epochs']) # do not foget to modify the number when dataset is changed
 
     ###############################################################################
@@ -115,8 +115,8 @@ def train(args):
         for batch in train_loader:# loop through all batches in training data
             model.train()
             batch_gpu = [tensor.to(device) for tensor in batch]
-            loss = model(*batch_gpu)  
-            
+            loss = model(*batch_gpu)
+
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), config['clip'])
             optimizer.step()
@@ -131,17 +131,17 @@ def train(args):
                         tb_writer.add_scalar('loss', loss, itr_global)
                 logger.info(log)
 
-                itr_start_time = time.time()   
+                itr_start_time = time.time()
 
             if itr_global % args.valid_every == 0:
-             
+
                 model.eval()
                 loss_records={}
 
                 for batch in valid_loader:
                     batch_gpu = [tensor.to(device) for tensor in batch]
                     with torch.no_grad():
-                        valid_loss = model.valid(*batch_gpu)    
+                        valid_loss = model.valid(*batch_gpu)
                     for loss_name, loss_value in valid_loss.items():
                         v=loss_records.get(loss_name, [])
                         v.append(loss_value)
@@ -151,20 +151,20 @@ def train(args):
                 for loss_name, loss_values in loss_records.items():
                     log = log + loss_name + ':%.4f  '%(np.mean(loss_values))
                     if args.visual:
-                        tb_writer.add_scalar(loss_name, np.mean(loss_values), itr_global)                 
-                logger.info(log)    
+                        tb_writer.add_scalar(loss_name, np.mean(loss_values), itr_global)
+                logger.info(log)
 
-            itr_global+=1        
+            itr_global+=1
 
             if itr_global % args.eval_every == 0:  # evaluate the model in the develop set
-                model.eval()      
-                save_model(model, itr_global, timestamp) # save model after each epoch
-                
+                model.eval()
+                # save_model(model, itr_global, timestamp) # save model after each epoch
+
                 valid_loader=torch.utils.data.DataLoader(dataset=valid_set, batch_size=1, shuffle=False, num_workers=1)
                 vocab_api = load_dict(args.data_path+'vocab.apiseq.json')
                 vocab_desc = load_dict(args.data_path+'vocab.desc.json')
                 metrics=Metrics()
-                
+
                 os.makedirs(f'./output/{args.model}/{args.expname}/{timestamp}/temp_results', exist_ok=True)
                 f_eval = open(f"./output/{args.model}/{args.expname}/{timestamp}/temp_results/iter{itr_global}.txt", "w")
                 repeat = 1
@@ -175,13 +175,14 @@ def train(args):
                 if args.visual:
                     tb_writer.add_scalar('recall_bleu', recall_bleu, itr_global)
                     tb_writer.add_scalar('prec_bleu', prec_bleu, itr_global)
-                
 
         # end of epoch ----------------------------
         model.adjust_lr()
-    
+
+        save_model(model, epoch, timestamp)  # save model after each epoch
+
 if __name__ == '__main__':
-    
+
     parser = argparse.ArgumentParser(description='DeepAPI Pytorch')
     # Path Arguments
     parser.add_argument('--data_path', type=str, default='./data/', help='location of the data corpus')
@@ -202,6 +203,6 @@ if __name__ == '__main__':
 
     torch.backends.cudnn.benchmark = True # speed up training by using cudnn
     torch.backends.cudnn.deterministic = True # fix the random seed in cudnn
-    
+
     train(args)
 

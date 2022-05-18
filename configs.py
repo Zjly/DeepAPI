@@ -44,7 +44,7 @@ def config_RNNEncDec():
 
 # Training Arguments
     'batch_size':350,
-    'epochs':100, # maximum number of epochs
+    'epochs':50, # maximum number of epochs
 #     'batch_size':100,
 #     'epochs':30, # maximum number of epochs
     'min_epochs':2, # minimum number of epochs to train for

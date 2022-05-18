@@ -59,10 +59,15 @@ def test():
 
     os.makedirs(path, exist_ok=True)
 
-    file_path = path + f"/{decode_mode}_{top_k}.log"
+    file_path = path + f"/{decode_mode}_{top_k}"
 
     # 结果评估
-    evaluate(model, test_loader, vocab_desc, vocab_api, decode_mode, top_k, file_path)
+    # evaluate(model, test_loader, vocab_desc, vocab_api, decode_mode, top_k, file_path)
+
+    top_k_list = [10, 15, 20]
+    for top_k in top_k_list:
+        file_path = path + f"/{decode_mode}_{top_k}"
+        evaluate(model, test_loader, vocab_desc, vocab_api, decode_mode, top_k, file_path)
 
 
 def evaluate(model, test_loader, vocab_desc, vocab_api, decode_mode, top_k, file_path):
@@ -70,7 +75,7 @@ def evaluate(model, test_loader, vocab_desc, vocab_api, decode_mode, top_k, file
     对模型进行评估
     :return:
     """
-    result = open(file_path, "w")
+    result = open(f"{file_path}.log", "w")
     device = next(model.parameters()).device
 
     # 评估指标
@@ -102,7 +107,8 @@ def evaluate(model, test_loader, vocab_desc, vocab_api, decode_mode, top_k, file
         # 加入次数统计
         for pred_token in pred_tokens:
             for id in pred_token:
-                api_count_dict[id] = api_count_dict.setdefault(id, 0) + 1
+                if id != "":
+                    api_count_dict[id] = api_count_dict.setdefault(id, 0) + 1
 
         # 进行BLEU的评估
         bleu = calculate_bleu(pred_tokens, ref_tokens)
@@ -131,15 +137,31 @@ def evaluate(model, test_loader, vocab_desc, vocab_api, decode_mode, top_k, file
         result.write(
             f"BLEU: {round(bleu, 2)}, levenshtein distance: {round(levenshtein_distance, 4)}, popularity: {round(popularity, 4)}\n\n")
 
+    # 保存计数字典
+    api_count_df = pd.DataFrame(columns=['api', 'count'])
+    api_list = []
+    count_list = []
+    for key in api_count_dict:
+        try:
+            api_list.append(key)
+            count_list.append(api_count_dict[key])
+        except:
+            continue
+
+    api_count_df['api'] = api_list
+    api_count_df['count'] = count_list
+    api_count_df.to_feather(file_path + ".feather")
+
     # 计算指标
     coverage = calculate_coverage(api_count_dict)
     information_entropy = calculate_information_entropy(api_count_dict)
+    gini_index = calculate_gini_index(api_count_dict)
 
     # 平均评估结果计算
     result.write(
         "------------------------------------------------------------------------------------------------------------------------\n")
     result.write(
-        f"BLEU: {round(np.mean(bleu_list), 2)}, levenshtein distance: {round(float(np.mean(levenshtein_distance_list)), 4)}, coverage: {round(coverage, 4)}, information_entropy: {round(information_entropy, 4)}, popularity: {round(float(np.mean(popularity_list)), 4)}")
+        f"BLEU: {round(np.mean(bleu_list), 2)}, levenshtein distance: {round(float(np.mean(levenshtein_distance_list)), 4)}, coverage: {round(coverage, 4)}, information_entropy: {round(information_entropy, 4)}, popularity: {round(float(np.mean(popularity_list)), 4)}, gini index: {round(gini_index, 4)}")
 
 
 def calculate_bleu(output_ids, label_ids):
@@ -283,6 +305,28 @@ def calculate_popularity(output_ids):
         id_popularity = id_popularity / len(output_id)
         popularity_list.append(id_popularity)
     return np.mean(popularity_list)
+
+
+def calculate_gini_index(count_dict):
+    """
+    计算基尼系数
+    对于推荐结果多样性的度量，衡量推荐系统推荐API的流行度的分布是否平均。基尼系数越小，代表推荐结果的多样性越好。
+    """
+    # 计算api总数
+    sum_count = 0
+    for api in count_dict:
+        sum_count += count_dict[api]
+
+    api_count_list = sorted(count_dict.items(), key=lambda x: x[1], reverse=False)
+    j = 1
+    n = len(api_count_list)
+    g = 0
+    for api_count in api_count_list:
+        count = api_count[1]
+        g += (2 * j - n - 1) * (count / sum_count)
+        j += 1
+
+    return g / float(n - 1)
 
 
 if __name__ == '__main__':
