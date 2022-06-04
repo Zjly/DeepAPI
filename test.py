@@ -26,8 +26,12 @@ def test():
     测试模型
     :return:
     """
-    timestamp = 202204150037
+    # timestamp = 202204150037
+    # epoch = 935000
+
+    timestamp = "epoch100"
     epoch = 935000
+
     decode_mode = 'beamsearch'  # greedy, beamsearch
     top_k = 10
 
@@ -64,7 +68,7 @@ def test():
     # 结果评估
     # evaluate(model, test_loader, vocab_desc, vocab_api, decode_mode, top_k, file_path)
 
-    top_k_list = [10, 15, 20]
+    top_k_list = [1, 5, 10, 15, 20]
     for top_k in top_k_list:
         file_path = path + f"/{decode_mode}_{top_k}"
         evaluate(model, test_loader, vocab_desc, vocab_api, decode_mode, top_k, file_path)

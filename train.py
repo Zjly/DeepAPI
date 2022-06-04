@@ -7,6 +7,9 @@ import json
 import logging
 import torch
 import os, sys
+
+from tqdm import tqdm
+
 parentPath = os.path.abspath("..")
 sys.path.insert(0, parentPath)# add parent folder to path so as to import common modules
 from helper import timeSince, sent2indexes, indexes2sent
@@ -112,7 +115,7 @@ def train(args):
 
         # shuffle (re-define) data between epochs   
 
-        for batch in train_loader:# loop through all batches in training data
+        for batch in tqdm(train_loader):# loop through all batches in training data
             model.train()
             batch_gpu = [tensor.to(device) for tensor in batch]
             loss = model(*batch_gpu)
@@ -194,10 +197,10 @@ if __name__ == '__main__':
 
     # Evaluation Arguments
     parser.add_argument('--sample', action='store_true', help='sample when decoding for generation')
-    parser.add_argument('--log_every', type=int, default=10, help='interval to log autoencoder training results')
+    parser.add_argument('--log_every', type=int, default=100, help='interval to log autoencoder training results')
     parser.add_argument('--valid_every', type=int, default=1000, help='interval to validation')
     parser.add_argument('--eval_every', type=int, default=5000, help='interval to evaluation to concrete results')
-    parser.add_argument('--seed', type=int, default=1111, help='random seed')
+    parser.add_argument('--seed', type=int, default=42, help='random seed')
 
     args = parser.parse_args()
 
