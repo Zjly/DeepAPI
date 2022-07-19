@@ -67,10 +67,10 @@ class APIDataset(data.Dataset):
         api_sequence = data['api_sequence']
 
         desc_len = min(len(question), self.max_seq_len - 2)  # get real seq len
-        desc = [SOS_ID] + question.tolist() + [EOS_ID]
+        desc = [SOS_ID] + question.tolist()[:self.max_seq_len - 2] + [EOS_ID]
 
         api_len = min(len(api_sequence), self.max_seq_len - 2)  # real length of sequences
-        api = [SOS_ID] + api_sequence.tolist() + [EOS_ID]
+        api = [SOS_ID] + api_sequence.tolist()[:self.max_seq_len - 2] + [EOS_ID]
 
         ## Padding ##
         api = self.list2array(api, self.max_seq_len, np.int, PAD_ID)
