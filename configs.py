@@ -43,10 +43,8 @@ def config_RNNEncDec():
     'teach_force':0.5, # probability to use teach force
 
 # Training Arguments
-    'batch_size':250,
-    'epochs':50, # maximum number of epochs
-#     'batch_size':100,
-#     'epochs':30, # maximum number of epochs
+    'batch_size':100,
+    'epochs':30, # maximum number of epochs
     'min_epochs':2, # minimum number of epochs to train for
 
     'lr':1e-4, # autoencoder learning rate

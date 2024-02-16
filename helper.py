@@ -40,7 +40,12 @@ def sent2indexes(sentence, vocab, maxlen):
         idxes.fill(PAD_ID)
         tokens = nltk.word_tokenize(sent.strip())
         idx_len = min(len(tokens), maxlen)
-        for i in range(idx_len): idxes[i] = vocab.get(tokens[i], UNK_ID)
+        idxes[0] = 1
+        index = 1
+        for i in range(idx_len):
+            idxes[index] = vocab.get(tokens[i], UNK_ID)
+            index += 1
+        idxes[index] = 2
         return idxes, idx_len
     if type(sentence) is list:
         inds, lens = None, None

@@ -534,7 +534,9 @@ class RNNDecoder(nn.Module):
                     utterance.append(n.wordid)
                 utterance = utterance[::-1] #reverse
                 utterance, length = utterance[1:], length-1 # remove <sos>
-                decoded_words[idx,uid,:min(length, max_unroll)]=utterance[:min(length, max_unroll)]
+                utterance_tensor = torch.tensor(utterance)
+                utterance_cpu = utterance_tensor.clone().detach().cpu()
+                decoded_words[idx,uid,:min(length, max_unroll)] = utterance_cpu[:min(length, max_unroll)]
                 sample_lens[idx,uid]=min(length, max_unroll)
                 scores[idx,uid]=score
                 uid=uid+1

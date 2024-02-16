@@ -10,7 +10,7 @@ sys.path.insert(0, parentPath)# add parent folder to path so as to import common
 from helper import indexes2sent
 import models, data, configs
 from metrics import Metrics
-from data_loader import APIDataset, load_dict, load_vecs
+from data_loader import APIDataset, load_dict
 
 
 def evaluate(model, metrics, test_loader, vocab_desc, vocab_api, repeat, decode_mode, f_eval):

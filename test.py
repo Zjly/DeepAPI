@@ -3,7 +3,7 @@
 
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 import random
 import math
@@ -36,7 +36,7 @@ def test():
     # epoch = 100
 
     timestamp = -1
-    epoch = 50
+    epoch = 1
 
     decode_mode = 'beamsearch'  # greedy, beamsearch
     top_k = 10
@@ -72,12 +72,12 @@ def test():
     file_path = path + f"/{decode_mode}_{top_k}"
 
     # 结果评估
-    # evaluate(model, test_loader, vocab_desc, vocab_api, decode_mode, top_k, file_path)
+    evaluate(model, test_loader, vocab_desc, vocab_api, decode_mode, top_k, file_path)
 
-    top_k_list = [5, 10]
-    for top_k in top_k_list:
-        file_path = path + f"/{decode_mode}_{top_k}"
-        evaluate(model, test_loader, vocab_desc, vocab_api, decode_mode, top_k, file_path)
+    # top_k_list = [5, 10]
+    # for top_k in top_k_list:
+    #     file_path = path + f"/{decode_mode}_{top_k}"
+    #     evaluate(model, test_loader, vocab_desc, vocab_api, decode_mode, top_k, file_path)
 
 
 def evaluate(model, test_loader, vocab_desc, vocab_api, decode_mode, top_k, file_path):
